@@ -74,7 +74,8 @@
                     y: row * tileSize,
                     wall: Math.random() < 0.2, // 벽 확률
                     revealed: false,
-                    moveable: false
+                    moveable: false,
+                    score: Math.floor(Math.random() * 7) - 3 // -3부터 3까지의 점수
                 };
             }
         }
@@ -101,6 +102,14 @@
                 context.fillStyle = fillColor;
                 context.fillRect(tile.x, tile.y, tileSize, tileSize);
                 context.strokeRect(tile.x, tile.y, tileSize, tileSize);
+
+                if (!tile.wall && tile.score !== 0 && !tile.revealed) {
+                    context.fillStyle = 'blue';
+                    context.font = "20px Arial";
+                    context.textAlign = "center";
+                    context.textBaseline = "middle";
+                    context.fillText(tile.score, tile.x + tileSize / 2, tile.y + tileSize / 2);
+                }
             }
         }
 
@@ -160,7 +169,7 @@
         while (!hasPath() && tries < maxTries) {
             for (let row = 0; row < mazeSize; row++) {
                 for (let col = 0; col < mazeSize; col++) {
-                    if (!(row === playerPosition.row && col === playerPosition.col) && !(row === endTile.row && col === endTile.col)) {
+                    if (!(row === playerPosition.row && col === endTile.col) && !(row === endTile.row && col === endTile.col)) {
                         tiles[row][col].wall = Math.random() < 0.3; // 벽 확률
                     }
                 }
@@ -200,7 +209,20 @@
                     tiles[playerPosition.row][playerPosition.col].revealed = true; // 현재 위치를 revealed 상태로 설정
                     playerPosition.row = selectedTile.row;
                     playerPosition.col = selectedTile.col;
-                    currentScore++;
+
+                    // 타일 점수 적용
+                    if (!tile.revealed) {
+                        currentScore += tile.score;
+                        document.getElementById('score').textContent = currentScore;
+                        if (currentScore > 13) {
+                            alert('점수가 13점을 넘었습니다. 출발지로 돌아갑니다.');
+                            playerPosition.row = 0;
+                            playerPosition.col = 0;
+                            currentScore = 0;
+                            document.getElementById('score').textContent = currentScore;
+                        }
+                    }
+
                     tiles[playerPosition.row][playerPosition.col].revealed = true;
                     updateMoveableTiles();
                     drawMaze();
