@@ -30,7 +30,7 @@
             background-color: white;
             padding: 20px;
             border: 1px solid black;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
         }
         button {
             margin: 10px;
@@ -65,6 +65,17 @@
     let hintsAvailable = 3;
     let selectedTile = null;
 
+    const sprite = new Image();
+    sprite.src = './asset/sprite.png'; // 스프라이트 이미지 경로
+
+    sprite.onload = function() {
+        initializeMaze();
+    };
+
+    sprite.onerror = function() {
+        console.error('스프라이트 이미지를 로드할 수 없습니다.');
+    };
+
     function initializeMaze() {
         for (let row = 0; row < mazeSize; row++) {
             tiles[row] = [];
@@ -84,8 +95,8 @@
         tiles[playerPosition.row][playerPosition.col].wall = false;
 
         createMaze();
-        drawMaze();
-        updateMoveableTiles();
+        drawMaze(); // 타일을 그린 후
+        updateMoveableTiles(); // 타일 업데이트
     }
 
     function drawMaze() {
@@ -95,23 +106,32 @@
         for (let row = 0; row < mazeSize; row++) {
             for (let col = 0; col < mazeSize; col++) {
                 const tile = tiles[row][col];
-                if (isTileVisible(row, col, visibleRange)) {
-                    const fillColor = getTileColor(tile, row, col);
-                    context.fillStyle = fillColor;
-                    context.fillRect(tile.x, tile.y, tileSize, tileSize);
-                    context.strokeRect(tile.x, tile.y, tileSize, tileSize);
+                const isVisible = isTileVisible(row, col, visibleRange);
+                if (isVisible) {
+                    if (tile.wall) {
+                        // 시야 내 벽을 그립니다.
+                        context.drawImage(sprite, 16, 0, 16, 16, tile.x, tile.y, tileSize, tileSize);
+                    } else {
+                        // 시야 내 길을 그립니다.
+                        context.drawImage(sprite, 32, 0, 16, 16, tile.x, tile.y, tileSize, tileSize);
+                    }
 
-                    if (!tile.wall && tile.score !== 0 && !tile.revealed) {
-                        context.fillStyle = 'blue';
-                        context.font = "20px Arial";
-                        context.textAlign = "center";
-                        context.textBaseline = "middle";
-                        context.fillText(tile.score, tile.x + tileSize / 2, tile.y + tileSize / 2);
+                    // 이동 가능한 타일 강조 표시
+                    if (tile.moveable) {
+                        context.strokeStyle = 'yellow';
+                        context.lineWidth = 2;
+                        context.strokeRect(tile.x, tile.y, tileSize, tileSize);
                     }
                 } else {
-                    context.fillStyle = 'black'; // 시야에 없는 타일을 검정색으로 처리
+                    // 시야 밖의 타일은 검정색으로 표시
+                    context.fillStyle = 'black';
                     context.fillRect(tile.x, tile.y, tileSize, tileSize);
-                    context.strokeRect(tile.x, tile.y, tileSize, tileSize);
+
+                    // 시야 밖의 벽을 검정색으로 표시
+                    if (tile.wall) {
+                        context.fillStyle = 'black';
+                        context.fillRect(tile.x, tile.y, tileSize, tileSize);
+                    }
                 }
             }
         }
@@ -123,9 +143,7 @@
         context.fill();
         context.stroke();
 
-        // 출구 표시
-        context.fillStyle = 'red';
-        context.fillRect(endTile.col * tileSize, endTile.row * tileSize, tileSize, tileSize);
+        context.drawImage(sprite, 48, 0, 16, 16, endTile.row * tileSize, tileSize, tileSize);
     }
 
     function isTileVisible(row, col, range) {
@@ -162,20 +180,6 @@
         return false;
     }
 
-    function getTileColor(tile, row, col) {
-        if (row === endTile.row && col === endTile.col) {
-            return 'red';
-        } else if (tile.wall) {
-            return 'darkgray'; // 벽은 어두운 회색으로
-        } else if (tile.revealed) {
-            return 'lightyellow'; // 이동한 타일은 밝은 노란색
-        } else if (tile.moveable) {
-            return 'lightgreen'; // 이동 가능한 타일은 밝은 녹색
-        } else {
-            return 'lightgray'; // 기본 색상
-        }
-    }
-
     function createMaze() {
         function isValid(row, col) {
             return row >= 0 && row < mazeSize && col >= 0 && col < mazeSize;
@@ -206,8 +210,8 @@
         while (!hasPath() && tries < maxTries) {
             for (let row = 0; row < mazeSize; row++) {
                 for (let col = 0; col < mazeSize; col++) {
-                    if (!(row === playerPosition.row && col === endTile.col) && !(row === endTile.row && col === endTile.col)) {
-                        tiles[row][col].wall = Math.random() < 0.3; // 벽 확률
+                    if (!(row === playerPosition.row && col === playerPosition.col) && !(row === endTile.row && col === endTile.col)) {
+                        tiles[row][col].wall = Math.random() < 0.3; // 30% 확률로 벽 생성
                     }
                 }
             }
@@ -216,16 +220,13 @@
     }
 
     function updateMoveableTiles() {
-        const directions = [
-            [-1, 0], [1, 0], [0, -1], [0, 1] // 상, 하, 좌, 우
-        ];
-
         for (let row = 0; row < mazeSize; row++) {
             for (let col = 0; col < mazeSize; col++) {
-                tiles[row][col].moveable = false;
+                tiles[row][col].moveable = false; // 기본적으로 이동 불가능
             }
         }
 
+        const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
         for (const [dr, dc] of directions) {
             const newRow = playerPosition.row + dr;
             const newCol = playerPosition.col + dc;
@@ -233,50 +234,34 @@
                 tiles[newRow][newCol].moveable = true;
             }
         }
-
         drawMaze();
     }
 
     function move() {
-        if (selectedTile) {
-            if (selectedTile.row !== undefined && selectedTile.col !== undefined) {
-                const tile = tiles[selectedTile.row][selectedTile.col];
-                if (tile.moveable) {
-                    tiles[playerPosition.row][playerPosition.col].revealed = true;
-                    playerPosition.row = selectedTile.row;
-                    playerPosition.col = selectedTile.col;
+        if (selectedTile && tiles[selectedTile.row][selectedTile.col].moveable) {
+            tiles[playerPosition.row][playerPosition.col].revealed = true;
+            playerPosition.row = selectedTile.row;
+            playerPosition.col = selectedTile.col;
 
-                    if (!tile.revealed) {
-                        currentScore += tile.score;
-                        document.getElementById('score').textContent = currentScore;
-                        if (currentScore > 13) {
-                            alert('점수가 13점을 넘었습니다. 출발지로 돌아갑니다.');
-                            playerPosition.row = 0;
-                            playerPosition.col = 0;
-                            currentScore = 0;
-                            document.getElementById('score').textContent = currentScore;
-                        }
-                    }
+            const tileScore = tiles[selectedTile.row][selectedTile.col].score;
+            currentScore += tileScore;
+            playerHealth += tileScore > 0 ? 1 : -1;
 
-                    playerHealth--;
-                    document.getElementById('health').textContent = playerHealth;
+            document.getElementById('score').innerText = currentScore;
+            document.getElementById('health').innerText = playerHealth;
 
-                    if (playerHealth <= 0) {
-                        endGame(false);
-                        return;
-                    }
-
-                    tiles[playerPosition.row][playerPosition.col].revealed = true;
-                    updateMoveableTiles();
-                    drawMaze();
-                    checkGameOver();
-                } else {
-                    alert('이동할 수 없는 타일입니다.');
-                }
+            if (playerPosition.row === endTile.row && playerPosition.col === endTile.col) {
+                document.getElementById('gameStatus').innerText = "축하합니다! 미로를 탈출했습니다!";
+                document.getElementById('optionContainer').style.display = 'none';
+            } else if (playerHealth <= 0) {
+                document.getElementById('gameStatus').innerText = "게임 오버! 체력이 모두 소진되었습니다.";
+                document.getElementById('optionContainer').style.display = 'none';
             } else {
-                alert('선택된 타일이 유효하지 않습니다.');
+                drawMaze();
+                updateMoveableTiles();
+                document.getElementById('optionContainer').style.display = 'none';
             }
-            document.getElementById('optionContainer').style.display = 'none';
+
             selectedTile = null;
         }
     }
@@ -284,31 +269,27 @@
     function useHint() {
         if (hintsAvailable > 0) {
             hintsAvailable--;
-            document.getElementById('hints').textContent = hintsAvailable;
-            tiles[endTile.row][endTile.col].moveable = true; // 힌트로 끝 위치를 밝힘
+            document.getElementById('hints').innerText = hintsAvailable;
+            revealSurroundingTiles(playerPosition.row, playerPosition.col, 1);
             drawMaze();
-            setTimeout(() => {
-                tiles[endTile.row][endTile.col].moveable = false; // 힌트 표시 해제
-                drawMaze();
-            }, 2000);
+        } else {
+            alert("더 이상 힌트를 사용할 수 없습니다.");
+        }
+    }
+
+    function revealSurroundingTiles(row, col, range) {
+        for (let r = row - range; r <= row + range; r++) {
+            for (let c = col - range; c <= col + range; c++) {
+                if (r >= 0 && r < mazeSize && c >= 0 && c < mazeSize && !tiles[r][c].wall) {
+                    tiles[r][c].revealed = true;
+                }
+            }
         }
     }
 
     function cancel() {
         document.getElementById('optionContainer').style.display = 'none';
         selectedTile = null;
-    }
-
-    function endGame(success) {
-        const gameStatus = document.getElementById('gameStatus');
-        if (success) {
-            gameStatus.textContent = "성공!";
-            gameStatus.style.color = "green";
-        } else {
-            gameStatus.textContent = "실패!";
-            gameStatus.style.color = "red";
-        }
-        canvas.removeEventListener('click', onClick);
     }
 
     function onClick(event) {
@@ -331,7 +312,6 @@
     }
 
     canvas.addEventListener('click', onClick);
-    initializeMaze();
 </script>
 </body>
 </html>
