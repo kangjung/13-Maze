@@ -126,12 +126,10 @@
                     // 시야 밖의 타일은 검정색으로 표시
                     context.fillStyle = 'black';
                     context.fillRect(tile.x, tile.y, tileSize, tileSize);
+                }
 
-                    // 시야 밖의 벽을 검정색으로 표시
-                    if (tile.wall) {
-                        context.fillStyle = 'black';
-                        context.fillRect(tile.x, tile.y, tileSize, tileSize);
-                    }
+                if (row === endTile.row && col === endTile.col) {
+                    context.drawImage(sprite, 48, 0, 16, 16, tile.x, tile.y, tileSize, tileSize);
                 }
             }
         }
@@ -142,21 +140,18 @@
         context.arc(playerPosition.col * tileSize + tileSize / 2, playerPosition.row * tileSize + tileSize / 2, tileSize / 4, 0, 2 * Math.PI);
         context.fill();
         context.stroke();
-
-        context.drawImage(sprite, 48, 0, 16, 16, endTile.row * tileSize, tileSize, tileSize);
     }
 
+
     function isTileVisible(row, col, range) {
-        if (row === playerPosition.row && col === playerPosition.col) {
-            return true;
-        }
         const dx = Math.abs(playerPosition.col - col);
         const dy = Math.abs(playerPosition.row - row);
         if (dx <= range && dy <= range) {
-            return !isBlockedByWall(playerPosition.row, playerPosition.col, row, col);
+            return true;
         }
         return false;
     }
+
 
     function isBlockedByWall(startRow, startCol, endRow, endCol) {
         const dx = endCol - startCol;
