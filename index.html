@@ -146,33 +146,7 @@
     function isTileVisible(row, col, range) {
         const dx = Math.abs(playerPosition.col - col);
         const dy = Math.abs(playerPosition.row - row);
-        if (dx <= range && dy <= range) {
-            return true;
-        }
-        return false;
-    }
-
-
-    function isBlockedByWall(startRow, startCol, endRow, endCol) {
-        const dx = endCol - startCol;
-        const dy = endRow - startRow;
-        const steps = Math.max(Math.abs(dx), Math.abs(dy));
-        const xIncrement = dx / steps;
-        const yIncrement = dy / steps;
-
-        let x = startCol;
-        let y = startRow;
-
-        for (let i = 0; i <= steps; i++) {
-            const row = Math.round(y);
-            const col = Math.round(x);
-            if (row >= 0 && row < mazeSize && col >= 0 && col < mazeSize && tiles[row][col].wall) {
-                return true;
-            }
-            x += xIncrement;
-            y += yIncrement;
-        }
-        return false;
+        return dx <= range && dy <= range;
     }
 
     function createMaze() {
@@ -245,6 +219,12 @@
             document.getElementById('score').innerText = currentScore;
             document.getElementById('health').innerText = playerHealth;
 
+            drawMaze(); // 이동 후 미로를 먼저 그림
+
+            if (tileScore !== 0) {
+                displayPixelatedScoreEffect(tileScore); // 점수 효과 표시
+            }
+
             if (playerPosition.row === endTile.row && playerPosition.col === endTile.col) {
                 document.getElementById('gameStatus').innerText = "축하합니다! 미로를 탈출했습니다!";
                 document.getElementById('optionContainer').style.display = 'none';
@@ -252,7 +232,6 @@
                 document.getElementById('gameStatus').innerText = "게임 오버! 체력이 모두 소진되었습니다.";
                 document.getElementById('optionContainer').style.display = 'none';
             } else {
-                drawMaze();
                 updateMoveableTiles();
                 document.getElementById('optionContainer').style.display = 'none';
             }
@@ -261,10 +240,59 @@
         }
     }
 
+    function displayPixelatedScoreEffect(tileScore) {
+        const text = tileScore > 0 ? `+${tileScore}` : `${tileScore}`;
+        const color = tileScore > 0 ? 'lime' : 'red';
+
+        console.log('Displaying pixelated score:', text, 'with color:', color);
+
+        const tempCanvas = document.createElement('canvas');
+        const tempContext = tempCanvas.getContext('2d');
+        const fontSize = 300;
+        tempCanvas.width = 600;
+        tempCanvas.height = 400;
+
+        tempContext.font = `bold ${fontSize}px Arial`;
+        tempContext.fillStyle = color;
+        tempContext.textAlign = 'center';
+        tempContext.textBaseline = 'middle';
+
+        tempContext.fillText(text, tempCanvas.width / 2, tempCanvas.height / 2);
+
+        const imageData = tempContext.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+        for (let i = 0; i < imageData.data.length; i += 4) {
+            if (imageData.data[i + 3] > 128) {
+                const rand = Math.random();
+                if (rand > 0.8) {
+                    imageData.data[i + 3] = 0;
+                }
+            }
+        }
+        tempContext.putImageData(imageData, 0, 0);
+
+        context.drawImage(tempCanvas, canvas.width / 2 - tempCanvas.width / 2, canvas.height / 2 - tempCanvas.height / 2);
+
+        let alpha = 1.0; // 투명도 초기값
+        const fadeOut = setInterval(() => {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.globalAlpha = alpha;
+            drawMaze();
+            context.drawImage(tempCanvas, canvas.width / 2 - tempCanvas.width / 2, canvas.height / 2 - tempCanvas.height / 2);
+            alpha -= 0.1;
+            if (alpha <= 0) {
+                clearInterval(fadeOut);
+                context.globalAlpha = 1.0;
+                drawMaze();
+                updateMoveableTiles();
+            }
+        }, 100);
+    }
+
+
     function useHint() {
         if (hintsAvailable > 0) {
             hintsAvailable--;
-            document.getElementById('hints').innerText = hintsAvailable;
+            document.getElementById('hints').innerText = hintsAvailable.toString();
             revealSurroundingTiles(playerPosition.row, playerPosition.col, 1);
             drawMaze();
         } else {
