@@ -114,6 +114,14 @@
                     } else {
                         // 시야 내 길을 그립니다.
                         context.drawImage(sprite, 32, 0, 16, 16, tile.x, tile.y, tileSize, tileSize);
+
+                        // 타일의 점수 표시
+                        if (tile.score !== 0) {
+                            context.fillStyle = tile.score > 0 ? 'green' : 'red'; // 점수에 따라 색상 결정
+                            context.font = '20px Arial';
+                            context.textAlign = 'center';
+                            context.fillText(tile.score, tile.x + tileSize / 2, tile.y + tileSize / 2 + 8); // 점수를 중앙에 표시
+                        }
                     }
 
                     // 이동 가능한 타일 강조 표시
