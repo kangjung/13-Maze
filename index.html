@@ -100,7 +100,8 @@
     }
 
     function drawMaze() {
-        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.fillStyle = 'black';
+        context.fillRect(0, 0, canvas.width, canvas.height);
 
         const visibleRange = 2; // 시야 범위
         for (let row = 0; row < mazeSize; row++) {
@@ -108,7 +109,9 @@
                 const tile = tiles[row][col];
                 const isVisible = isTileVisible(row, col, visibleRange);
                 if (isVisible) {
-                    if (tile.wall) {
+                    if (row === endTile.row && col === endTile.col) {
+                        context.drawImage(sprite, 0, 0, 16, 16, tile.x, tile.y, tileSize, tileSize);
+                    } else if (tile.wall) {
                         // 시야 내 벽을 그립니다.
                         context.drawImage(sprite, 16, 0, 16, 16, tile.x, tile.y, tileSize, tileSize);
                     } else {
@@ -135,10 +138,6 @@
                     context.fillStyle = 'black';
                     context.fillRect(tile.x, tile.y, tileSize, tileSize);
                 }
-
-                if (row === endTile.row && col === endTile.col) {
-                    context.drawImage(sprite, 48, 0, 16, 16, tile.x, tile.y, tileSize, tileSize);
-                }
             }
         }
 
@@ -149,7 +148,6 @@
         context.fill();
         context.stroke();
     }
-
 
     function isTileVisible(row, col, range) {
         const dx = Math.abs(playerPosition.col - col);
