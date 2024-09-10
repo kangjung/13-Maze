@@ -118,8 +118,8 @@
                         // 시야 내 길을 그립니다.
                         context.drawImage(sprite, 32, 0, 16, 16, tile.x, tile.y, tileSize, tileSize);
 
-                        // 타일의 점수 표시
-                        if (tile.score !== 0) {
+                        // 타일이 힌트로 드러난 경우에만 점수 표시
+                        if (tile.revealed && tile.score !== 0) {
                             context.fillStyle = tile.score > 0 ? 'green' : 'red'; // 점수에 따라 색상 결정
                             context.font = '20px Arial';
                             context.textAlign = 'center';
@@ -214,7 +214,10 @@
 
     function move() {
         if (selectedTile && tiles[selectedTile.row][selectedTile.col].moveable) {
-            tiles[playerPosition.row][playerPosition.col].revealed = true;
+            // 현재 플레이어 위치의 타일의 revealed 상태를 초기화
+            tiles[playerPosition.row][playerPosition.col].revealed = false;
+
+            // 플레이어 위치 업데이트
             playerPosition.row = selectedTile.row;
             playerPosition.col = selectedTile.col;
 
@@ -299,7 +302,7 @@
         if (hintsAvailable > 0) {
             hintsAvailable--;
             document.getElementById('hints').innerText = hintsAvailable.toString();
-            revealSurroundingTiles(playerPosition.row, playerPosition.col, 1);
+            revealSurroundingTiles(playerPosition.row, playerPosition.col, 1); // 타일 드러내기
             drawMaze();
         } else {
             alert("더 이상 힌트를 사용할 수 없습니다.");
