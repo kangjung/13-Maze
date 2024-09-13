@@ -214,6 +214,15 @@
         }, 4000);
     }
 
+    function getRandomScore() {
+        const random = Math.random();
+        if (random < 0.7) { // 70% 확률로 양수 점수
+            return Math.floor(Math.random() * 4); // 0, 1, 2, 3 중 하나
+        } else {
+            return -Math.floor(Math.random() * 4); // -1, -2, -3 중 하나
+        }
+    }
+
     function initializeMaze() {
         for (let row = 0; row < mazeSize; row++) {
             tiles[row] = [];
@@ -224,7 +233,7 @@
                     wall: Math.random() < 0.2, // 벽 확률
                     revealed: false,
                     moveable: false,
-                    score: Math.floor(Math.random() * 7) - 3 // -3부터 3까지의 점수
+                    score: getRandomScore()
                 };
             }
         }
@@ -351,7 +360,6 @@
             tries++;
         }
     }
-
     function updateMoveableTiles() {
         for (let row = 0; row < mazeSize; row++) {
             for (let col = 0; col < mazeSize; col++) {
@@ -510,9 +518,7 @@
             const tile = tiles[row][col];
             if (tile.moveable) {
                 selectedTile = { row, col };
-                const optionContainer = document.getElementById('optionContainer');
-                optionContainer.style.left = `${event.clientX}px`;
-                optionContainer.style.top = `${event.clientY}px`;
+                adjustOptionContainerPosition(event.clientX - rect.left, event.clientY - rect.top);
                 optionContainer.style.display = 'flex';
             }
         }
@@ -549,6 +555,18 @@
         }
     });
 
+    function adjustOptionContainerPosition(x, y) {
+        const rect = canvas.getBoundingClientRect();
+        const containerWidth = optionContainer.offsetWidth;
+        const containerHeight = optionContainer.offsetHeight;
+
+        // Ensure the container stays within the canvas bounds
+        const offsetX = Math.max(0, Math.min(x, canvas.width - containerWidth));
+        const offsetY = Math.max(0, Math.min(y, canvas.height - containerHeight));
+
+        optionContainer.style.left = `${rect.left + offsetX}px`;
+        optionContainer.style.top = `${rect.top + offsetY}px`;
+    }
 
     canvas.addEventListener('touchstart', function(event) {
         event.preventDefault();
@@ -587,9 +605,7 @@
                 const tile = tiles[row][col];
                 if (tile.moveable) {
                     selectedTile = { row, col };
-                    const optionContainer = document.getElementById('optionContainer');
-                    optionContainer.style.left = `${event.touches[0].clientX}px`;
-                    optionContainer.style.top = `${event.touches[0].clientY}px`;
+                    adjustOptionContainerPosition(event.clientX - rect.left, event.clientY - rect.top);
                     optionContainer.style.display = 'flex';
                 }
             }
