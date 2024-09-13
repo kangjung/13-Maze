@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>js13kgame - 미로 게임</title>
+    <title>js13kgame - 13 Maze</title>
     <style>
         body {
             display: flex;
@@ -35,9 +35,9 @@
 <body>
 <canvas id="gameCanvas"></canvas>
 <div id="optionContainer">
-    <button onclick="move()">이동</button>
-    <button onclick="useHint()">힌트 사용</button>
-    <button onclick="cancel()">취소</button>
+    <button onclick="move()">Move</button>
+    <button id="hintBtn" onclick="useHint()">Hint</button>
+    <button onclick="cancel()">Close</button>
 </div>
 
 <script>
@@ -46,12 +46,11 @@
     if (window.orientation === 0 || window.orientation === 180) { // 세로 방향
         canvasWidth = window.innerWidth;
         canvasHeight = window.innerHeight;
-    } else { // 가로 방향
+    } else {
         const aspectRatio = 9 / 16;
         canvasWidth = window.innerWidth;
         canvasHeight = window.innerWidth / aspectRatio;
 
-        // 화면 높이가 계산된 캔버스 높이보다 작은 경우, 캔버스 높이를 화면 높이에 맞추고, 캔버스 너비를 비율에 맞게 조정
         if (canvasHeight > window.innerHeight) {
             canvasHeight = window.innerHeight;
             canvasWidth = window.innerHeight * aspectRatio;
@@ -84,77 +83,74 @@
 
     let gameState = 'start';
     function drawStartScreen() {
+        context.fillStyle = 'black';
+        context.fillRect(0, 0, canvas.width, canvas.height);
         const mazeWidth = mazeSize * tileSize;
         const mazeHeight = mazeSize * tileSize;
         const mazeX = (canvas.width - mazeWidth) / 2;
         const mazeY = (canvas.height - mazeHeight) / 2;
-        context.fillStyle = 'black';
-        context.fillRect(mazeX, mazeY, mazeWidth, mazeHeight);
-        context.fillStyle = 'white';
         context.font = '50px Arial';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        drawGlitchText('Click or Tap to Start', mazeX + mazeWidth / 2, mazeY + mazeHeight / 2);
+        drawGlitchText('13-Maze \n \n Click or Tap to Start', mazeX + mazeWidth / 2, mazeY + mazeHeight / 2);
+        document.getElementById('hintBtn').innerHTML = `Hint (${hintsAvailable})`;
+        createHorrorBGM();
     }
     function drawGameOverScreen() {
+        context.fillStyle = 'black';
+        context.fillRect(0, 0, canvas.width, canvas.height);
         // 미로의 크기와 위치 계산
         const mazeWidth = mazeSize * tileSize;
         const mazeHeight = mazeSize * tileSize;
         const mazeX = (canvas.width - mazeWidth) / 2;
         const mazeY = (canvas.height - mazeHeight) / 2;
-
-        // 미로 영역만큼만 검은색으로 채우기
-        context.fillStyle = 'black';
-        context.fillRect(mazeX, mazeY, mazeWidth, mazeHeight);
-
-        // 텍스트 표시
-        context.fillStyle = 'white';
+        let text = (currentScore >= 13) ?  "OVER 13" : (currentScore <= -13) ? "-13 DOWN" : ""
         context.font = '50px Arial';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        drawGlitchText('Game Over', mazeX + mazeWidth / 2, mazeY + mazeHeight / 2);
+        drawGlitchText('Game Over \n\n' + text, mazeX + mazeWidth / 2, mazeY + mazeHeight / 2);
     }
 
     function drawGameClearScreen() {
+        context.fillStyle = 'black';
+        context.fillRect(0, 0, canvas.width, canvas.height);
         // 미로의 크기와 위치 계산
         const mazeWidth = mazeSize * tileSize;
         const mazeHeight = mazeSize * tileSize;
         const mazeX = (canvas.width - mazeWidth) / 2;
         const mazeY = (canvas.height - mazeHeight) / 2;
 
-        // 미로 영역만큼만 검은색으로 채우기
-        context.fillStyle = 'black';
-        context.fillRect(mazeX, mazeY, mazeWidth, mazeHeight);
-
         // 텍스트 표시
-        context.fillStyle = 'white';
+        context.fillStyle = 'red';
         context.font = '50px Arial';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         drawGlitchText('Game Clear', mazeX + mazeWidth / 2, mazeY + mazeHeight / 2);
     }
-    let glitchText = null;
+    let glitchText = [];
     let glitchTextX = 0;
-    let glitchTextY = 0;
+    let glitchTextY = [];
 
     function drawGlitchText(text, x, y) {
-        glitchText = text;
+        glitchText = text.split('\n');
         glitchTextX = x;
-        glitchTextY = y;
+        glitchTextY = glitchText.map((_, i) => y + i * 50);
     }
 
     function update() {
-        if (glitchText) {
+        if (glitchText.length > 0) {
             context.font = '50px Arial'; // 글자 크기와 폰트 설정
             context.textAlign = 'center'; // 텍스트 정렬 방식 설정
             context.textBaseline = 'middle'; // 텍스트 기준선 설정
 
-            // 글리치 효과 적용
-            for (let i = 0; i < 5; i++) {
-                const dx = Math.random() * 10 - 5; // -5에서 5 사이의 랜덤한 값
-                const dy = Math.random() * 10 - 5; // -5에서 5 사이의 랜덤한 값
-                context.fillStyle = `hsl(${Math.random() * 360}, 100%, 50%)`; // 랜덤한 색상
-                context.fillText(glitchText, glitchTextX + dx, glitchTextY + dy); // 텍스트 그리기
+            // 각 줄의 텍스트에 대해 글리치 효과 적용
+            for (let i = 0; i < glitchText.length; i++) {
+                for (let j = 0; j < 5; j++) {
+                    const dx = Math.random() * 10 - 5; // -5에서 5 사이의 랜덤한 값
+                    const dy = Math.random() * 10 - 5; // -5에서 5 사이의 랜덤한 값
+                    context.fillStyle = `rgb(${Math.random() * 180}, ${Math.random() * 80}, ${Math.random() * 80})`; // 회색 계열의 랜덤한 색상
+                    context.fillText(glitchText[i], glitchTextX + dx, glitchTextY[i] + dy); // 텍스트 그리기
+                }
             }
         }
 
@@ -163,6 +159,9 @@
 
     update(); // 게임 루프 시작
     function drawScreen() {
+        context.clearRect(0, 0, canvas.width, canvas.height); // 화면 지우기
+        context.fillStyle = 'black'; // 배경색을 검정색으로 변경
+        context.fillRect(0, 0, canvas.width, canvas.height); // 화면 전체를 채움
         if (gameState === 'start') {
             drawStartScreen();
         } else if (gameState === 'playing') {
@@ -192,6 +191,29 @@
         oscillator.stop(audioContext.currentTime + 0.1);
     }
 
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+    function createHorrorBGM() {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        oscillator.type = 'sawtooth';
+        oscillator.frequency.setValueAtTime(60, audioContext.currentTime); // 저주파
+
+        gainNode.gain.setValueAtTime(0.01, audioContext.currentTime); // 초기 볼륨 낮게
+        gainNode.gain.exponentialRampToValueAtTime(0.05, audioContext.currentTime + 2); // 서서히 커짐
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 4); // 다시 작아짐
+
+        oscillator.connect(gainNode).connect(audioContext.destination);
+        oscillator.start();
+
+        setInterval(() => {
+            oscillator.frequency.setValueAtTime(60, audioContext.currentTime); // 기본 주파수
+            gainNode.gain.setValueAtTime(0.01, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.05, audioContext.currentTime + 2);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 4);
+        }, 4000);
+    }
+
     function initializeMaze() {
         for (let row = 0; row < mazeSize; row++) {
             tiles[row] = [];
@@ -215,13 +237,11 @@
         updateMoveableTiles(); // 타일 업데이트
     }
     function isTileVisible(row, col, range) {
-        // 미로의 크기와 위치 계산
         const mazeWidth = mazeSize * tileSize;
         const mazeHeight = mazeSize * tileSize;
         const mazeX = (canvas.width - mazeWidth) / 2;
         const mazeY = (canvas.height - mazeHeight) / 2;
 
-        // 플레이어와 타일의 위치를 미로의 왼쪽 상단 모서리를 기준으로 변경
         const playerRelativeX = playerPosition.col * tileSize - mazeX;
         const playerRelativeY = playerPosition.row * tileSize - mazeY;
         const tileRelativeX = col * tileSize - mazeX;
@@ -272,13 +292,8 @@
                 }
             }
         }
+        context.drawImage(sprite, 48, 0, 16, 16, mazeX + playerPosition.col * tileSize, mazeY + playerPosition.row * tileSize, tileSize, tileSize);
 
-        // 플레이어 표시
-        context.fillStyle = 'yellow';
-        context.beginPath();
-        context.arc(mazeX + playerPosition.col * tileSize + tileSize / 2, mazeY + playerPosition.row * tileSize + tileSize / 2, tileSize / 4, 0, 2 * Math.PI);
-        context.fill();
-        context.stroke();
 
         // 플레이어 중심으로 원 모양의 시야 표현
         context.globalCompositeOperation = 'destination-in';
@@ -329,7 +344,7 @@
             for (let row = 0; row < mazeSize; row++) {
                 for (let col = 0; col < mazeSize; col++) {
                     if (!(row === playerPosition.row && col === playerPosition.col) && !(row === endTile.row && col === endTile.col)) {
-                        tiles[row][col].wall = Math.random() < 0.3; // 30% 확률로 벽 생성
+                        tiles[row][col].wall = Math.random() < 0.4; // 30% 확률로 벽 생성
                     }
                 }
             }
@@ -340,7 +355,7 @@
     function updateMoveableTiles() {
         for (let row = 0; row < mazeSize; row++) {
             for (let col = 0; col < mazeSize; col++) {
-                tiles[row][col].moveable = false; // 기본적으로 이동 불가능
+                tiles[row][col].moveable = false;
             }
         }
 
@@ -377,24 +392,16 @@
                 document.getElementById('optionContainer').style.display = 'none';
                 gameState = 'gameclear';
                 drawScreen();
-                setTimeout(function() {
-                    currentScore = 0; // 점수 초기화
-                    playerPosition.row=0;
-                    playerPosition.col = 0;
-                    gameState = 'start';
-                    drawScreen();
-                }, 5000);
+                currentScore = 0;
+                playerPosition.row=0;
+                playerPosition.col = 0;
             } else if (currentScore >= 13 || currentScore <= -13) {
                 document.getElementById('optionContainer').style.display = 'none';
                 gameState = 'gameover';
                 drawScreen();
-                setTimeout(function() {
-                    currentScore = 0; // 점수 초기화
-                    playerPosition.row=0;
-                    playerPosition.col = 0;
-                    gameState = 'start';
-                    drawScreen();
-                }, 5000);
+                currentScore = 0;
+                playerPosition.row=0;
+                playerPosition.col = 0;
             } else {
                 updateMoveableTiles();
                 document.getElementById('optionContainer').style.display = 'none';
@@ -406,7 +413,7 @@
 
     function displayPixelatedScoreEffect(tileScore) {
         const text = tileScore > 0 ? `+${tileScore}` : `${tileScore}`;
-        const color = tileScore > 0 ? 'lime' : 'red';
+        const color = tileScore > 0 ? 'gray' : 'red';
 
         console.log('Displaying pixelated score:', text, 'with color:', color);
 
@@ -440,7 +447,8 @@
 
         let alpha = 1.0; // 투명도 초기값
         const fadeOut = setInterval(() => {
-            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.fillStyle = 'black';
+            context.fillRect(0, 0, canvas.width, canvas.height);
             context.globalAlpha = alpha;
             drawMaze();
             context.drawImage(tempCanvas, 0, 0);
@@ -458,9 +466,10 @@
     function useHint() {
         if (hintsAvailable > 0) {
             hintsAvailable--;
-            document.getElementById('hints').innerText = hintsAvailable.toString();
-            revealSurroundingTiles(playerPosition.row, playerPosition.col, 1); // 타일 드러내기
+            revealSurroundingTiles(playerPosition.row, playerPosition.col, 1);
             drawMaze();
+            document.getElementById('optionContainer').style.display = 'none';
+            document.getElementById('hintBtn').innerHTML = `Hint (${hintsAvailable})`;
         } else {
             alert("더 이상 힌트를 사용할 수 없습니다.");
         }
@@ -486,13 +495,11 @@
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
 
-        // 미로의 크기와 위치 계산
         const mazeWidth = mazeSize * tileSize;
         const mazeHeight = mazeSize * tileSize;
         const mazeX = (canvas.width - mazeWidth) / 2;
         const mazeY = (canvas.height - mazeHeight) / 2;
 
-        // 클릭한 위치를 미로의 왼쪽 상단 모서리를 기준으로 변경
         const mazeRelativeX = x - mazeX;
         const mazeRelativeY = y - mazeY;
 
@@ -518,6 +525,7 @@
     document.getElementById('optionContainer').addEventListener('click', function(event) {
         event.stopPropagation();
     });
+
     canvas.addEventListener('click', function(event) {
         if (gameState === 'start') {
             gameState = 'transition';
@@ -528,21 +536,38 @@
                 alpha += 0.01;
                 if (alpha >= 1.0) {
                     clearInterval(transition);
+                    glitchText = [];
                     gameState = 'playing';
-                    glitchText = null;
                     initializeMaze();
                 }
             }, 10);
         } else if (gameState === 'playing') {
             onClick(event);
+        } else if (gameState === 'gameover' || gameState === 'gameclear') {
+            gameState = 'start';
+            drawScreen();
         }
     });
+
+
     canvas.addEventListener('touchstart', function(event) {
         event.preventDefault();
         if (gameState === 'start') {
-            gameState = 'playing';
-            initializeMaze();
+            gameState = 'transition';
+
+            let alpha = 0.0;
+            const transition = setInterval(() => {
+                drawTransition(alpha);
+                alpha += 0.01;
+                if (alpha >= 1.0) {
+                    clearInterval(transition);
+                    glitchText = [];
+                    gameState = 'playing';
+                    initializeMaze();
+                }
+            }, 10);
         } else if (gameState === 'playing') {
+
             event.preventDefault();
             const rect = canvas.getBoundingClientRect();
             const x = event.touches[0].clientX - rect.left;
@@ -558,7 +583,6 @@
 
             const col = Math.floor(mazeRelativeX / tileSize);
             const row = Math.floor(mazeRelativeY / tileSize);
-
             if (row >= 0 && row < mazeSize && col >= 0 && col < mazeSize) {
                 const tile = tiles[row][col];
                 if (tile.moveable) {
@@ -569,6 +593,9 @@
                     optionContainer.style.display = 'flex';
                 }
             }
+        } else if (gameState === 'gameover' || gameState === 'gameclear') {
+            gameState = 'start';
+            drawScreen();
         }
     }, false);
 
