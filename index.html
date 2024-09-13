@@ -43,7 +43,7 @@
 <script>
     const canvas = document.getElementById('gameCanvas');
     let canvasWidth, canvasHeight;
-    if (window.orientation === 0 || window.orientation === 180) { // 세로 방향
+    if (window.orientation === 0 || window.orientation === 180) {
         canvasWidth = window.innerWidth;
         canvasHeight = window.innerHeight;
     } else {
@@ -62,7 +62,7 @@
 
     const context = canvas.getContext('2d');
 
-    const mazeSize = 10; // 미로 크기
+    const mazeSize = 10;
 
     const tileSize = Math.min(canvas.width, canvas.height) / mazeSize;
 
@@ -78,7 +78,7 @@
     sprite.src = './asset/sprite.png';
 
     sprite.onerror = function() {
-        console.error('스프라이트 이미지를 로드할 수 없습니다.');
+        console.error('sprite error.');
     };
 
     let gameState = 'start';
@@ -99,7 +99,6 @@
     function drawGameOverScreen() {
         context.fillStyle = 'black';
         context.fillRect(0, 0, canvas.width, canvas.height);
-        // 미로의 크기와 위치 계산
         const mazeWidth = mazeSize * tileSize;
         const mazeHeight = mazeSize * tileSize;
         const mazeX = (canvas.width - mazeWidth) / 2;
@@ -114,13 +113,11 @@
     function drawGameClearScreen() {
         context.fillStyle = 'black';
         context.fillRect(0, 0, canvas.width, canvas.height);
-        // 미로의 크기와 위치 계산
         const mazeWidth = mazeSize * tileSize;
         const mazeHeight = mazeSize * tileSize;
         const mazeX = (canvas.width - mazeWidth) / 2;
         const mazeY = (canvas.height - mazeHeight) / 2;
 
-        // 텍스트 표시
         context.fillStyle = 'red';
         context.font = '50px Arial';
         context.textAlign = 'center';
@@ -139,29 +136,29 @@
 
     function update() {
         if (glitchText.length > 0) {
-            context.font = '50px Arial'; // 글자 크기와 폰트 설정
-            context.textAlign = 'center'; // 텍스트 정렬 방식 설정
-            context.textBaseline = 'middle'; // 텍스트 기준선 설정
+            context.font = '50px Arial';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
 
             // 각 줄의 텍스트에 대해 글리치 효과 적용
             for (let i = 0; i < glitchText.length; i++) {
                 for (let j = 0; j < 5; j++) {
-                    const dx = Math.random() * 10 - 5; // -5에서 5 사이의 랜덤한 값
-                    const dy = Math.random() * 10 - 5; // -5에서 5 사이의 랜덤한 값
-                    context.fillStyle = `rgb(${Math.random() * 180}, ${Math.random() * 80}, ${Math.random() * 80})`; // 회색 계열의 랜덤한 색상
-                    context.fillText(glitchText[i], glitchTextX + dx, glitchTextY[i] + dy); // 텍스트 그리기
+                    const dx = Math.random() * 10 - 5;
+                    const dy = Math.random() * 10 - 5;
+                    context.fillStyle = `rgb(${Math.random() * 180}, ${Math.random() * 80}, ${Math.random() * 80})`;
+                    context.fillText(glitchText[i], glitchTextX + dx, glitchTextY[i] + dy);
                 }
             }
         }
 
-        requestAnimationFrame(update); // 다음 프레임에 update 함수를 다시 호출
+        requestAnimationFrame(update);
     }
 
-    update(); // 게임 루프 시작
+    update();
     function drawScreen() {
-        context.clearRect(0, 0, canvas.width, canvas.height); // 화면 지우기
-        context.fillStyle = 'black'; // 배경색을 검정색으로 변경
-        context.fillRect(0, 0, canvas.width, canvas.height); // 화면 전체를 채움
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.fillStyle = 'black';
+        context.fillRect(0, 0, canvas.width, canvas.height);
         if (gameState === 'start') {
             drawStartScreen();
         } else if (gameState === 'playing') {
@@ -197,17 +194,16 @@
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
         oscillator.type = 'sawtooth';
-        oscillator.frequency.setValueAtTime(60, audioContext.currentTime); // 저주파
-
-        gainNode.gain.setValueAtTime(0.01, audioContext.currentTime); // 초기 볼륨 낮게
-        gainNode.gain.exponentialRampToValueAtTime(0.05, audioContext.currentTime + 2); // 서서히 커짐
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 4); // 다시 작아짐
+        oscillator.frequency.setValueAtTime(60, audioContext.currentTime);
+        gainNode.gain.setValueAtTime(0.01, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.05, audioContext.currentTime + 2);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 4);
 
         oscillator.connect(gainNode).connect(audioContext.destination);
         oscillator.start();
 
         setInterval(() => {
-            oscillator.frequency.setValueAtTime(60, audioContext.currentTime); // 기본 주파수
+            oscillator.frequency.setValueAtTime(60, audioContext.currentTime);
             gainNode.gain.setValueAtTime(0.01, audioContext.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.05, audioContext.currentTime + 2);
             gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 4);
@@ -216,10 +212,10 @@
 
     function getRandomScore() {
         const random = Math.random();
-        if (random < 0.7) { // 70% 확률로 양수 점수
-            return Math.floor(Math.random() * 4); // 0, 1, 2, 3 중 하나
+        if (random < 0.7) {
+            return Math.floor(Math.random() * 4);
         } else {
-            return -Math.floor(Math.random() * 4); // -1, -2, -3 중 하나
+            return -Math.floor(Math.random() * 4);
         }
     }
 
@@ -230,7 +226,7 @@
                 tiles[row][col] = {
                     x: col * tileSize,
                     y: row * tileSize,
-                    wall: Math.random() < 0.2, // 벽 확률
+                    wall: Math.random() < 0.2,
                     revealed: false,
                     moveable: false,
                     score: getRandomScore()
@@ -242,8 +238,8 @@
         tiles[playerPosition.row][playerPosition.col].wall = false;
 
         createMaze();
-        drawMaze(); // 타일을 그린 후
-        updateMoveableTiles(); // 타일 업데이트
+        drawMaze();
+        updateMoveableTiles();
     }
     function isTileVisible(row, col, range) {
         const mazeWidth = mazeSize * tileSize;
@@ -263,8 +259,6 @@
     function drawMaze() {
         context.fillStyle = 'black';
         context.fillRect(0, 0, canvas.width, canvas.height);
-
-        // 미로의 크기와 위치 계산
         const mazeWidth = mazeSize * tileSize;
         const mazeHeight = mazeSize * tileSize;
         const mazeX = (canvas.width - mazeWidth) / 2;
@@ -304,13 +298,11 @@
         context.drawImage(sprite, 48, 0, 16, 16, mazeX + playerPosition.col * tileSize, mazeY + playerPosition.row * tileSize, tileSize, tileSize);
 
 
-        // 플레이어 중심으로 원 모양의 시야 표현
         context.globalCompositeOperation = 'destination-in';
         context.beginPath();
         context.arc(mazeX + playerPosition.col * tileSize + tileSize / 2, mazeY + playerPosition.row * tileSize + tileSize / 2, tileSize * 2, 0, 2 * Math.PI);
         context.fill();
 
-        // globalCompositeOperation 속성을 원래대로 복구
         context.globalCompositeOperation = 'source-over';
 
         // 시야 이외의 부분에 안개 효과 추가
@@ -479,7 +471,7 @@
             document.getElementById('optionContainer').style.display = 'none';
             document.getElementById('hintBtn').innerHTML = `Hint (${hintsAvailable})`;
         } else {
-            alert("더 이상 힌트를 사용할 수 없습니다.");
+            alert("Hints are no longer available.");
         }
     }
 
